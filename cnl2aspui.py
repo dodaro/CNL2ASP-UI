@@ -1,5 +1,6 @@
 import base64
 import uuid
+import zlib
 from io import StringIO
 
 import clingo
@@ -11,6 +12,7 @@ import json
 import dumbo_utils.url as dumbo
 
 height = 400
+
 
 def init():
     if constants.CNL_STATEMENTS not in st.session_state:
@@ -31,11 +33,18 @@ def init():
     if constants.ERROR not in st.session_state:
         st.session_state[constants.ERROR] = None
 
+    if constants.LINK not in st.session_state:
+        st.session_state[constants.LINK] = ""
+
+    print(st.query_params)
     if "cnl" in st.query_params:
         try:
-            st.session_state[constants.CNL_STATEMENTS] = base64.b64decode(st.query_params["cnl"]).decode()
-        except Exception:
-            print("eccezione")
+            decompressed = zlib.decompress(base64.b64decode(st.query_params["cnl"].removesuffix("!").replace(" ", "+")))
+            json_obj = json.loads(base64.b64decode(decompressed).decode())
+            if "cnl_statements" in json_obj:
+                st.session_state[constants.CNL_STATEMENTS] = json_obj["cnl_statements"]
+        except Exception as e:
+            print(e)
             pass
 
 
@@ -147,6 +156,13 @@ def call_asp_chef():
     return f"https://asp-chef.alviano.net/#{dumbo.compress_object_for_url(my_dict)}"
 
 
+def generate_shareable_link():
+    if st.session_state.cnl is None or st.session_state.cnl == "":
+        return
+    compressed = dumbo.compress_object_for_url({"cnl_statements": f"{st.session_state.cnl}"})
+    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app?cnl={compressed}"
+
+
 if __name__ == '__main__':
     init()
     st.set_page_config(layout="wide")
@@ -164,6 +180,9 @@ if __name__ == '__main__':
     my_json.toggle(label="Json output", value=st.session_state[constants.JSON], help="Output in json format.",
                    on_change=update_json)
     convert.button(label="Convert", on_click=convert_text(cnl_statements))
+    generate_link, link_area = cnl_column.columns([1, 4])
+    generate_link.button(label="Generate link", on_click=generate_shareable_link)
+    link_area.code(st.session_state[constants.LINK], line_numbers=False)
     expander = cnl_column.expander("Import from file")
     uploaded_file = expander.file_uploader("Choose a CNL file")
     if uploaded_file is not None:
