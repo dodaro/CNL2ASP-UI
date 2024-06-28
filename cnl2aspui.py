@@ -1,4 +1,5 @@
 import base64
+import uuid
 from io import StringIO
 
 import clingo
@@ -7,11 +8,9 @@ import sys
 import streamlit as st
 import constants
 import json
-import webbrowser
-from dumbo_asp.queries import pack_asp_chef_url
+import dumbo_utils.url as dumbo
 
 height = 400
-
 
 def init():
     if constants.CNL_STATEMENTS not in st.session_state:
@@ -109,8 +108,39 @@ def run_clingo():
 def call_asp_chef():
     if st.session_state[constants.ASP_ENCODING] is None:
         return
-    url = pack_asp_chef_url(constants.ASP_CHEF_URL, the_input=str(st.session_state[constants.ASP_ENCODING]))
-    webbrowser.open(url, new=0, autoraise=True)
+    my_dict = {
+            "input": [st.session_state[constants.ASP_ENCODING]],
+            "encode_input": False,
+            "decode_output": False,
+            "show_help": True,
+            "show_operations": True,
+            "show_io_panel": True,
+            "show_ingredient_details": True,
+            "readonly_ingredients": False,
+            "show_ingredient_headers": True,
+            "pause_baking": False,
+            "recipe": [
+                {
+                    "id": f"{uuid.uuid4()}",
+                    "operation": "Search Models",
+                    "options": {
+                        "stop": False,
+                        "apply": True,
+                        "show": True,
+                        "readonly": False,
+                        "hide_header": False,
+                        "height": 400,
+                        "rules": "",
+                        "number": 1,
+                        "raises": True,
+                        "input_as_constraints": False,
+                        "decode_predicate": "_base64_",
+                        "echo_encoded_content": False
+                    }
+                }
+            ]
+        }
+    return f"https://asp-chef.alviano.net/#{dumbo.compress_object_for_url(my_dict)}"
 
 
 if __name__ == '__main__':
@@ -145,7 +175,7 @@ if __name__ == '__main__':
         else:
             download.download_button("Download", str(st.session_state[constants.ASP_ENCODING]),
                                      file_name='encoding.asp')
-            asp_chef.button(label="Open in ASP Chef", on_click=call_asp_chef)
+            asp_chef.link_button(label="Open in ASP Chef", url=call_asp_chef())
             run.button(label="Run", on_click=run_clingo)
             expander_answer_set = asp_column.expander("Show answer set")
             expander_answer_set.text_area("Answer set", key="answer_set")
