@@ -150,7 +150,10 @@ if __name__ == '__main__':
     st.divider()
     cnl_column, asp_column = st.columns(2, gap="medium")
     cnl_column.header("CNL")
-    cnl_statements = cnl_column.text_area("Insert here your CNL statements", key="cnl", value=st.session_state[constants.CNL_STATEMENTS], height=height)
+    if st.session_state[constants.CNL_STATEMENTS] is None:
+        cnl_statements = cnl_column.text_area("Insert here your CNL statements", key="cnl", height=height)
+    else:
+        cnl_statements = cnl_column.text_area("Insert here your CNL statements", key="cnl", value=st.session_state[constants.CNL_STATEMENTS], height=height)
     optimize, my_json, convert = cnl_column.columns(3)
     optimize.toggle(label="Optimize encoding", value=st.session_state[constants.OPTIMIZE],
                     help="Optimize encoding using [ngo](https://github.com/potassco/ngo).", on_change=update_optimize)
