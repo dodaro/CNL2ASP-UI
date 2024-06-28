@@ -86,10 +86,14 @@ def upload_file():
 
 def update_optimize():
     st.session_state[constants.OPTIMIZE] = not st.session_state[constants.OPTIMIZE]
+    st.session_state[constants.JSON] = False
+    optimize.toggle = False
 
 
 def update_json():
     st.session_state[constants.JSON] = not st.session_state[constants.JSON]
+    st.session_state[constants.OPTIMIZE] = False
+    my_json.toggle = False
 
 
 def on_model(m):
