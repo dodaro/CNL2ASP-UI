@@ -46,9 +46,10 @@ def init():
         try:
             decompressed = zlib.decompress(base64.b64decode(st.query_params["cnl"].removesuffix("!").replace(" ", "+")))
             json_obj = json.loads(base64.b64decode(decompressed).decode())
-            for element in [constants.CNL_STATEMENTS, constants.RUN_SOLVER, constants.OPTIMIZE]:
+            for element in [constants.CNL_STATEMENTS, constants.RUN_SOLVER, constants.OPTIMIZE, constants.SELECTED_SYMBOLS]:
                 if element in json_obj:
                     st.session_state[element] = json_obj[element]
+            st.query_params.clear()
         except Exception as e:
             pass
 
@@ -166,6 +167,7 @@ def generate_shareable_link():
             constants.CNL_STATEMENTS: f"{st.session_state[constants.CNL_STATEMENTS]}",
             constants.RUN_SOLVER: st.session_state[constants.RUN_SOLVER],
             constants.OPTIMIZE: st.session_state[constants.OPTIMIZE],
+            constants.SELECTED_SYMBOLS: st.session_state[constants.SELECTED_SYMBOLS]
         }
     )
     st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app?cnl={compressed}"
