@@ -114,8 +114,8 @@ def run_clingo():
     if st.session_state[constants.ASP_ENCODING] is None:
         return
     ctl = clingo.Control()
-    to_show = [f"#show {x}." for x in st.session_state[constants.SELECTED_SYMBOLS]]
-    ctl.add("base", [], f"{st.session_state[constants.ASP_ENCODING]}\n{'\n'.join(to_show)}")
+    to_show = '\n'.join([f"#show {x}." for x in st.session_state[constants.SELECTED_SYMBOLS]])
+    ctl.add("base", [], f"{st.session_state[constants.ASP_ENCODING]}\n{to_show}")
     ctl.ground([("base", [])])
     ctl.solve(on_model=on_model)
 
