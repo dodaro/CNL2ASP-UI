@@ -33,6 +33,15 @@ def init():
     if constants.LINK not in st.session_state:
         st.session_state[constants.LINK] = ""
 
+    if constants.SYMBOLS not in st.session_state:
+        st.session_state[constants.SYMBOLS] = []
+
+    if constants.STR_2_SYMBOL not in st.session_state:
+        st.session_state[constants.STR_2_SYMBOL] = {}
+
+    if constants.SELECTED_SYMBOLS not in st.session_state:
+        st.session_state[constants.SELECTED_SYMBOLS] = []
+
     if "cnl" in st.query_params:
         try:
             decompressed = zlib.decompress(base64.b64decode(st.query_params["cnl"].removesuffix("!").replace(" ", "+")))
@@ -59,8 +68,16 @@ def get_asp_encoding():
         if str(exception.getvalue()) != "":
             return False, str(exception.getvalue())
         else:
+            st.session_state[constants.SYMBOLS] = []
+            st.session_state['str_to_symbols'] = {}
+            for symbol in tool.get_symbols():
+                symbol_string = f"{symbol.predicate}/{len(symbol.attributes)}"
+                st.session_state[constants.SYMBOLS].append(symbol_string)
+                st.session_state[constants.STR_2_SYMBOL][symbol_string] = symbol
             if st.session_state[constants.OPTIMIZE]:
-                asp_encoding = tool.optimize(asp_encoding)
+                selected_symbols = [st.session_state[constants.STR_2_SYMBOL][x]
+                                    for x in st.session_state[constants.SELECTED_SYMBOLS]]
+                asp_encoding = tool.optimize(asp_encoding, selected_symbols)
             return True, asp_encoding
     except Exception as e:
         return False, str(e)
@@ -97,7 +114,8 @@ def run_clingo():
     if st.session_state[constants.ASP_ENCODING] is None:
         return
     ctl = clingo.Control()
-    ctl.add("base", [], f"{st.session_state[constants.ASP_ENCODING]}")
+    to_show = [f"#show {x}." for x in st.session_state[constants.SELECTED_SYMBOLS]]
+    ctl.add("base", [], f"{st.session_state[constants.ASP_ENCODING]}\n{'\n'.join(to_show)}")
     ctl.ground([("base", [])])
     ctl.solve(on_model=on_model)
 
@@ -106,37 +124,37 @@ def call_asp_chef():
     if st.session_state[constants.ASP_ENCODING] is None:
         return
     my_dict = {
-            "input": [st.session_state[constants.ASP_ENCODING]],
-            "encode_input": False,
-            "decode_output": False,
-            "show_help": True,
-            "show_operations": True,
-            "show_io_panel": True,
-            "show_ingredient_details": True,
-            "readonly_ingredients": False,
-            "show_ingredient_headers": True,
-            "pause_baking": False,
-            "recipe": [
-                {
-                    "id": f"{uuid.uuid4()}",
-                    "operation": "Search Models",
-                    "options": {
-                        "stop": False,
-                        "apply": True,
-                        "show": True,
-                        "readonly": False,
-                        "hide_header": False,
-                        "height": 400,
-                        "rules": "",
-                        "number": 1,
-                        "raises": True,
-                        "input_as_constraints": False,
-                        "decode_predicate": "_base64_",
-                        "echo_encoded_content": False
-                    }
+        "input": [st.session_state[constants.ASP_ENCODING]],
+        "encode_input": False,
+        "decode_output": False,
+        "show_help": True,
+        "show_operations": True,
+        "show_io_panel": True,
+        "show_ingredient_details": True,
+        "readonly_ingredients": False,
+        "show_ingredient_headers": True,
+        "pause_baking": False,
+        "recipe": [
+            {
+                "id": f"{uuid.uuid4()}",
+                "operation": "Search Models",
+                "options": {
+                    "stop": False,
+                    "apply": True,
+                    "show": True,
+                    "readonly": False,
+                    "hide_header": False,
+                    "height": 400,
+                    "rules": "",
+                    "number": 1,
+                    "raises": True,
+                    "input_as_constraints": False,
+                    "decode_predicate": "_base64_",
+                    "echo_encoded_content": False
                 }
-            ]
-        }
+            }
+        ]
+    }
     return f"https://asp-chef.alviano.net/#{dumbo.compress_object_for_url(my_dict)}"
 
 
@@ -160,6 +178,7 @@ def updated_text_area():
 init()
 st.set_page_config(layout="wide")
 st.title("CNL2ASP")
+
 st.divider()
 cnl_column, asp_column = st.columns(2, gap="medium")
 cnl_column.header("CNL")
@@ -175,6 +194,10 @@ convert_button = convert.button(label="Convert", on_click=convert_text())
 generate_link, link_area = cnl_column.columns([1, 4])
 generate_link.button(label="Generate link", on_click=generate_shareable_link)
 link_area.code(st.session_state[constants.LINK], line_numbers=False)
+selected = cnl_column.multiselect("Filter output", options=st.session_state[constants.SYMBOLS],
+                                  default=st.session_state[constants.SELECTED_SYMBOLS])
+st.session_state[constants.SELECTED_SYMBOLS] = selected
+
 with st.form("my-form", clear_on_submit=True):
     uploaded_file = st.file_uploader("Choose a CNL file")
     submitted = st.form_submit_button("Import")
