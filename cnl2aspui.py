@@ -21,9 +21,6 @@ def init():
     if constants.OPTIMIZE not in st.session_state:
         st.session_state[constants.OPTIMIZE] = False
 
-    if constants.JSON not in st.session_state:
-        st.session_state[constants.JSON] = False
-
     if constants.RUN_SOLVER not in st.session_state:
         st.session_state[constants.RUN_SOLVER] = False
 
@@ -40,7 +37,7 @@ def init():
         try:
             decompressed = zlib.decompress(base64.b64decode(st.query_params["cnl"].removesuffix("!").replace(" ", "+")))
             json_obj = json.loads(base64.b64decode(decompressed).decode())
-            for element in [constants.CNL_STATEMENTS, constants.RUN_SOLVER, constants.OPTIMIZE, constants.JSON]:
+            for element in [constants.CNL_STATEMENTS, constants.RUN_SOLVER, constants.OPTIMIZE]:
                 if element in json_obj:
                     st.session_state[element] = json_obj[element]
         except Exception as e:
@@ -56,20 +53,17 @@ def get_asp_encoding():
     try:
         sys.stdout = exception = StringIO()
         tool = Cnl2asp(st.session_state[constants.CNL_STATEMENTS])
-        if st.session_state[constants.JSON]:
-            asp_encoding = json.dumps(tool.cnl_to_json(), indent=4)
-        else:
-            asp_encoding = tool.compile()
+        asp_encoding = tool.compile()
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         if str(exception.getvalue()) != "":
-            return False, str(exception.getvalue()), None
+            return False, str(exception.getvalue())
         else:
             if st.session_state[constants.OPTIMIZE]:
                 asp_encoding = tool.optimize(asp_encoding)
             return True, asp_encoding
     except Exception as e:
-        return False, str(e), None
+        return False, str(e)
 
 
 def convert_text():
@@ -87,20 +81,11 @@ def convert_text():
 
 def update_optimize():
     st.session_state[constants.OPTIMIZE] = not st.session_state[constants.OPTIMIZE]
-    st.session_state[constants.JSON] = False
     optimize.toggle = False
-
-
-def update_json():
-    st.session_state[constants.JSON] = not st.session_state[constants.JSON]
-    st.session_state[constants.OPTIMIZE] = False
-    st.session_state[constants.RUN_SOLVER] = False
-    my_json.toggle = False
 
 
 def update_run_solver():
     st.session_state[constants.RUN_SOLVER] = not st.session_state[constants.RUN_SOLVER]
-    st.session_state[constants.JSON] = False
     run_solver.toggle = False
 
 
@@ -163,7 +148,6 @@ def generate_shareable_link():
             constants.CNL_STATEMENTS: f"{st.session_state[constants.CNL_STATEMENTS]}",
             constants.RUN_SOLVER: st.session_state[constants.RUN_SOLVER],
             constants.OPTIMIZE: st.session_state[constants.OPTIMIZE],
-            constants.JSON: st.session_state[constants.JSON]
         }
     )
     st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app?cnl={compressed}"
@@ -181,14 +165,12 @@ cnl_column, asp_column = st.columns(2, gap="medium")
 cnl_column.header("CNL")
 cnl_statements = cnl_column.text_area("Insert here your CNL statements", key="cnl", on_change=updated_text_area,
                                       height=height, max_chars=None, value=st.session_state[constants.CNL_STATEMENTS])
-run_solver, optimize, my_json, convert = cnl_column.columns(4)
+run_solver, optimize, convert = cnl_column.columns(3)
 run_solver.toggle(label="Run", value=st.session_state[constants.RUN_SOLVER],
                   help="Run clingo the produced encoding.",
                   on_change=update_run_solver)
 optimize.toggle(label="Optimize", value=st.session_state[constants.OPTIMIZE],
                 help="Optimize encoding using [ngo](https://github.com/potassco/ngo).", on_change=update_optimize)
-my_json.toggle(label="Json", value=st.session_state[constants.JSON], help="Output in json format.",
-               on_change=update_json)
 convert_button = convert.button(label="Convert", on_click=convert_text())
 generate_link, link_area = cnl_column.columns([1, 4])
 generate_link.button(label="Generate link", on_click=generate_shareable_link)
@@ -207,15 +189,12 @@ asp_column.markdown("***")
 if st.session_state[constants.ASP_ENCODING] is not None:
     asp_column.code(st.session_state[constants.ASP_ENCODING], language="prolog", line_numbers=True)
     download, asp_chef = asp_column.columns(2)
-    if st.session_state[constants.JSON]:
-        download.download_button("Download", str(st.session_state[constants.ASP_ENCODING]), file_name="output.json")
-    else:
-        download.download_button("Download", str(st.session_state[constants.ASP_ENCODING]),
-                                 file_name='encoding.asp')
-        asp_chef.link_button(label="Open in ASP Chef", url=call_asp_chef())
-        if st.session_state[constants.RUN_SOLVER]:
-            asp_column.text_area("Answer set", key="answer_set")
-            asp_column.download_button("Download", st.session_state.answer_set,
-                                       file_name="answer_set.txt")
+    download.download_button("Download", str(st.session_state[constants.ASP_ENCODING]),
+                             file_name='encoding.asp')
+    asp_chef.link_button(label="Open in ASP Chef", url=call_asp_chef())
+    if st.session_state[constants.RUN_SOLVER]:
+        asp_column.text_area("Answer set", key="answer_set")
+        asp_column.download_button("Download", st.session_state.answer_set,
+                                   file_name="answer_set.txt")
 elif st.session_state[constants.ERROR] is not None:
     asp_column.error(st.session_state[constants.ERROR])
