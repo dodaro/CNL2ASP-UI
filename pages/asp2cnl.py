@@ -1,5 +1,4 @@
 import base64
-import os.path
 import zlib
 
 from asp2cnl.compiler import compile_rule
@@ -121,7 +120,7 @@ st.set_page_config(page_title="asp2nl",
                    layout="wide")
 CNL2ASP_button, ASP2NL_button, _ = col1, col2, col3 = st.columns([1, 1, 10])
 if CNL2ASP_button.button('CNL2ASP'):
-    st.switch_page(os.path.join('pages', 'cnl2asp.py'))
+    st.switch_page('cnl2aspui.py')
 ASP2NL_button.button('ASP2NL', disabled=True)
 st.title("ASP2CNL")
 

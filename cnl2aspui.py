@@ -1,5 +1,4 @@
 import base64
-import os
 import uuid
 import zlib
 from io import StringIO
@@ -173,7 +172,7 @@ def generate_shareable_link():
             constants.SELECTED_SYMBOLS: st.session_state[constants.SELECTED_SYMBOLS]
         }
     )
-    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app/cnl2asp?cnl={compressed}"
+    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app?cnl={compressed}"
 
 
 def updated_text_area():
@@ -187,7 +186,7 @@ st.set_page_config(page_title="cnl2asp",
 CNL2ASP_button, ASP2CNL_button, _ = col1, col2, col3 = st.columns([1, 1, 10])
 CNL2ASP_button.button('CNL2ASP', disabled=True)
 if ASP2CNL_button.button('ASP2CNL'):
-    st.switch_page(os.path.join('pages', 'asp2cnl.py'))
+    st.switch_page('pages/asp2cnl.py')
 
 st.title("CNL2ASP")
 
