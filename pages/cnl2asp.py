@@ -1,4 +1,5 @@
 import base64
+import os
 import uuid
 import zlib
 from io import StringIO
@@ -7,9 +8,10 @@ import clingo
 from cnl2asp.cnl2asp import Cnl2asp
 import sys
 import streamlit as st
-import constants
 import json
 import dumbo_utils.url as dumbo
+
+import constants
 
 height = 400
 
@@ -46,7 +48,8 @@ def init():
         try:
             decompressed = zlib.decompress(base64.b64decode(st.query_params["cnl"].removesuffix("!").replace(" ", "+")))
             json_obj = json.loads(base64.b64decode(decompressed).decode())
-            for element in [constants.CNL_STATEMENTS, constants.RUN_SOLVER, constants.OPTIMIZE, constants.SELECTED_SYMBOLS]:
+            for element in [constants.CNL_STATEMENTS, constants.RUN_SOLVER, constants.OPTIMIZE,
+                            constants.SELECTED_SYMBOLS]:
                 if element in json_obj:
                     st.session_state[element] = json_obj[element]
             st.query_params.clear()
@@ -85,7 +88,7 @@ def get_asp_encoding():
 
 
 def convert_text():
-    if st.session_state[constants.CNL_STATEMENTS].strip() == "":
+    if not st.session_state[constants.CNL_STATEMENTS] or st.session_state[constants.CNL_STATEMENTS].strip() == "":
         return
     reset()
     result, message = get_asp_encoding()
@@ -170,15 +173,22 @@ def generate_shareable_link():
             constants.SELECTED_SYMBOLS: st.session_state[constants.SELECTED_SYMBOLS]
         }
     )
-    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app?cnl={compressed}"
+    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app/cnl2asp?cnl={compressed}"
 
 
 def updated_text_area():
     st.session_state[constants.CNL_STATEMENTS] = st.session_state.cnl
 
 
+
 init()
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="cnl2asp",
+                   layout="wide")
+CNL2ASP_button, ASP2CNL_button, _ = col1, col2, col3 = st.columns([1, 1, 10])
+CNL2ASP_button.button('CNL2ASP', disabled=True)
+if ASP2CNL_button.button('ASP2CNL'):
+    st.switch_page(os.path.join('pages', 'asp2cnl.py'))
+
 st.title("CNL2ASP")
 
 st.divider()

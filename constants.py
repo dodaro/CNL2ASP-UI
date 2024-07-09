@@ -1,5 +1,6 @@
 ASP_ENCODING = "asp_output"
 CNL_STATEMENTS = "cnl_statements"
+DEFINITIONS = 'definitions'
 ERROR = "error"
 OPTIMIZE = "optimize"
 LINK = "link"
