@@ -116,12 +116,12 @@ def updated_definitions():
 
 
 init()
-st.set_page_config(page_title="asp2nl",
+st.set_page_config(page_title="asp2cnl",
                    layout="wide")
-CNL2ASP_button, ASP2NL_button, _ = col1, col2, col3 = st.columns([1, 1, 10])
+CNL2ASP_button, ASP2CNL_button, _ = col1, col2, col3 = st.columns([1, 1, 10])
 if CNL2ASP_button.button('CNL2ASP'):
     st.switch_page('cnl2aspui.py')
-ASP2NL_button.button('ASP2NL', disabled=True)
+ASP2CNL_button.button('ASP2CNL', disabled=True)
 st.title("ASP2CNL")
 
 st.divider()
