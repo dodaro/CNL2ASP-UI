@@ -183,11 +183,6 @@ def updated_text_area():
 init()
 st.set_page_config(page_title="cnl2asp",
                    layout="wide")
-CNL2ASP_button, ASP2CNL_button, _ = col1, col2, col3 = st.columns([1, 1, 10])
-CNL2ASP_button.button('CNL2ASP', disabled=True)
-if ASP2CNL_button.button('ASP2CNL'):
-    st.switch_page('pages/asp2cnl.py')
-
 st.title("CNL2ASP")
 
 st.divider()
