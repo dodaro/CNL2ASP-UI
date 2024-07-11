@@ -120,26 +120,32 @@ def updated_definitions():
 
 
 def call_qwen_llm():
-    client = Client("Qwen/Qwen2-72B-Instruct")
-    result = client.predict(
-        query=f"{st.session_state[constants.CNL_STATEMENTS]}",
-        history=[],
-        system="Explain the problem provided improving the writing style",
-        api_name="/model_chat"
-    )
-    st.session_state[constants.CNL_STATEMENTS] = result[1][0][1]
+    try:
+        client = Client("Qwen/Qwen2-72B-Instruct")
+        result = client.predict(
+            query=f"{st.session_state[constants.CNL_STATEMENTS]}",
+            history=[],
+            system="Explain the problem provided improving the writing style",
+            api_name="/model_chat"
+        )
+        st.session_state[constants.CNL_STATEMENTS] = result[1][0][1]
+    except:
+        st.session_state[constants.CNL_STATEMENTS] = None
+        st.session_state[constants.ERROR] = 'Could not contact the server, please try again later.'
 
 
 def read_asp_file():
-    stringio = StringIO(st.session_state.asp_upleader.getvalue().decode("utf-8"))
-    string_data = stringio.read()
-    st.session_state[constants.ASP_ENCODING] = string_data
+    if st.session_state.asp_uploader is not None:
+        stringio = StringIO(st.session_state.asp_uploader.getvalue().decode("utf-8"))
+        string_data = stringio.read()
+        st.session_state[constants.ASP_ENCODING] = string_data
 
 
 def read_definitions_file():
-    stringio = StringIO(st.session_state.definitions_uploader.getvalue().decode("utf-8"))
-    string_data = stringio.read()
-    st.session_state[constants.DEFINITIONS] = string_data
+    if st.session_state.definitions_uploader is not None:
+        stringio = StringIO(st.session_state.definitions_uploader.getvalue().decode("utf-8"))
+        string_data = stringio.read()
+        st.session_state[constants.DEFINITIONS] = string_data
 
 
 init()
@@ -157,7 +163,7 @@ asp_column.text_area("Insert here your definitions", key="definitions", on_chang
 
 asp_title, import_asp = asp_column.columns(2)
 asp_title.header("ASP")
-import_asp.file_uploader("Upload ASP encoding", key='asp_upleader', on_change=read_asp_file)
+import_asp.file_uploader("Upload ASP encoding", key='asp_uploader', on_change=read_asp_file)
 
 asp_column.text_area("Insert here your ASP encoding", key="asp", on_change=updated_asp_area,
                      height=height, max_chars=None, value=st.session_state[constants.ASP_ENCODING])
