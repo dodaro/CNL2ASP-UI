@@ -181,7 +181,7 @@ def updated_text_area():
 
 
 init()
-st.set_page_config(page_title="cnl2asp",
+st.set_page_config(page_title="CNL2ASP",
                    layout="wide")
 st.title("CNL2ASP")
 

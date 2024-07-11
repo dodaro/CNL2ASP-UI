@@ -1,10 +1,13 @@
 import base64
 import zlib
+from io import StringIO
 
 from asp2cnl.compiler import compile_rule
 from asp2cnl.parser import ASPParser
 from cnl2asp.cnl2asp import Cnl2asp
 import streamlit as st
+from gradio_client import Client
+
 import constants
 import json
 import dumbo_utils.url as dumbo
@@ -109,35 +112,56 @@ def generate_shareable_link():
 
 def updated_asp_area():
     st.session_state[constants.ASP_ENCODING] = st.session_state.asp
+    st.session_state[constants.ERROR] = None
 
 
 def updated_definitions():
     st.session_state[constants.DEFINITIONS] = st.session_state.definitions
 
 
+def call_qwen_llm():
+    client = Client("Qwen/Qwen2-72B-Instruct")
+    result = client.predict(
+        query=f"{st.session_state[constants.CNL_STATEMENTS]}",
+        history=[],
+        system="Explain the problem provided improving the writing style",
+        api_name="/model_chat"
+    )
+    st.session_state[constants.CNL_STATEMENTS] = result[1][0][1]
+
+
+def read_asp_file():
+    stringio = StringIO(st.session_state.asp_upleader.getvalue().decode("utf-8"))
+    string_data = stringio.read()
+    st.session_state[constants.ASP_ENCODING] = string_data
+
+
+def read_definitions_file():
+    stringio = StringIO(st.session_state.definitions_uploader.getvalue().decode("utf-8"))
+    string_data = stringio.read()
+    st.session_state[constants.DEFINITIONS] = string_data
+
+
 init()
-st.set_page_config(page_title="asp2cnl",
+st.set_page_config(page_title="ASP2CNL",
                    layout="wide")
 st.title("ASP2CNL")
 
 st.divider()
 asp_column, res_column = st.columns(2, gap="medium")
 definition_title, import_definitions = asp_column.columns(2)
-file_definitions = import_definitions.file_uploader("Upload definitions")
-if file_definitions:
-    st.session_state[constants.DEFINITIONS] = file_definitions.read()
+import_definitions.file_uploader("Upload definitions", key='definitions_uploader', on_change=read_definitions_file)
 definition_title.header("DEFINITIONS")
 asp_column.text_area("Insert here your definitions", key="definitions", on_change=updated_definitions,
                      height=int(height / 2), max_chars=None, value=st.session_state[constants.DEFINITIONS])
 
 asp_title, import_asp = asp_column.columns(2)
 asp_title.header("ASP")
-file_asp_encoding = import_asp.file_uploader("Upload ASP encoding")
-if file_asp_encoding:
-    st.session_state[constants.ASP_ENCODING] = file_asp_encoding.read()
+import_asp.file_uploader("Upload ASP encoding", key='asp_upleader', on_change=read_asp_file)
+
 asp_column.text_area("Insert here your ASP encoding", key="asp", on_change=updated_asp_area,
                      height=height, max_chars=None, value=st.session_state[constants.ASP_ENCODING])
-asp_column.button(label="Convert", on_click=convert_asp())
+asp_column.button(label="Convert", on_click=convert_asp)
 
 generate_link, link_area = asp_column.columns([1, 4])
 generate_link.button(label="Generate link", on_click=generate_shareable_link)
@@ -145,9 +169,13 @@ link_area.code(st.session_state[constants.LINK], line_numbers=False)
 
 res_column.header("CNL")
 if st.session_state[constants.CNL_STATEMENTS] is not None:
+    st.markdown('''<style> code {
+              white-space : pre-wrap !important;
+            } </style>''', unsafe_allow_html=True)
     res_column.code(st.session_state[constants.CNL_STATEMENTS], language='markdown')
-    download = res_column.columns(1)[0]
+    download, improve = res_column.columns(2)
     download.download_button("Download", str(st.session_state[constants.CNL_STATEMENTS]),
                              file_name='cnl.txt')
+    improve.button(label='Improve', on_click=call_qwen_llm)
 elif st.session_state[constants.ERROR] is not None:
     res_column.error(st.session_state[constants.ERROR])
