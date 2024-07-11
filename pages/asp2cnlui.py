@@ -101,7 +101,7 @@ def generate_shareable_link():
                 constants.ASP_ENCODING: f"{st.session_state[constants.ASP_ENCODING]}",
             }
         )
-    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app/asp2cnl?"
+    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app/asp2cnlui?"
     if compressed_definitions is not None and compressed_asp is not None:
         st.session_state[constants.LINK] += f"asp={compressed_asp}&def={compressed_definitions}"
     elif compressed_definitions is not None:
