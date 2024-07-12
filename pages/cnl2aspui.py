@@ -179,7 +179,6 @@ def updated_text_area():
     st.session_state[constants.CNL_STATEMENTS] = st.session_state.cnl
 
 
-
 init()
 st.set_page_config(page_title="CNL2ASP",
                    layout="wide")
@@ -196,9 +195,9 @@ run_solver.toggle(label="Run", value=st.session_state[constants.RUN_SOLVER],
                   on_change=update_run_solver)
 optimize.toggle(label="Optimize", value=st.session_state[constants.OPTIMIZE],
                 help="Optimize encoding using [ngo](https://github.com/potassco/ngo).", on_change=update_optimize)
-convert_button = convert.button(label="Convert", on_click=convert_text())
+convert_button = convert.button(label="Convert", on_click=convert_text(), help="Convert CNL statements to ASP")
 generate_link, link_area = cnl_column.columns([1, 4])
-generate_link.button(label="Generate link", on_click=generate_shareable_link)
+generate_link.button(label="Generate link", on_click=generate_shareable_link, help="Generate a shareable link to this page")
 link_area.code(st.session_state[constants.LINK], line_numbers=False)
 selected = cnl_column.multiselect("Filter output", options=st.session_state[constants.SYMBOLS],
                                   default=st.session_state[constants.SELECTED_SYMBOLS])
@@ -219,11 +218,11 @@ if st.session_state[constants.ASP_ENCODING] is not None:
     asp_column.code(st.session_state[constants.ASP_ENCODING], language="prolog", line_numbers=True)
     download, asp_chef = asp_column.columns(2)
     download.download_button("Download", str(st.session_state[constants.ASP_ENCODING]),
-                             file_name='encoding.asp')
-    asp_chef.link_button(label="Open in ASP Chef", url=call_asp_chef())
+                             file_name='encoding.asp', help="Download ASP encoding")
+    asp_chef.link_button(label="Open in ASP Chef", url=call_asp_chef(), help="Open encoding in ASP Chef tool")
     if st.session_state[constants.RUN_SOLVER]:
         asp_column.text_area("Answer set", key="answer_set")
         asp_column.download_button("Download", st.session_state.answer_set,
-                                   file_name="answer_set.txt")
+                                   file_name="answer_set.txt", help="Download answer set")
 elif st.session_state[constants.ERROR] is not None:
     asp_column.error(st.session_state[constants.ERROR])

@@ -156,21 +156,22 @@ st.title("ASP2CNL")
 st.divider()
 asp_column, res_column = st.columns(2, gap="medium")
 definition_title, import_definitions = asp_column.columns(2)
-import_definitions.file_uploader("Upload definitions", key='definitions_uploader', on_change=read_definitions_file)
-definition_title.header("DEFINITIONS")
-asp_column.text_area("Insert here your definitions", key="definitions", on_change=updated_definitions,
-                     height=int(height / 2), max_chars=None, value=st.session_state[constants.DEFINITIONS])
+import_definitions.file_uploader("Upload concept definitions", key='definitions_uploader', on_change=read_definitions_file)
+definition_title.header("CNL Concepts")
+asp_column.text_area("Insert here the concept definitions", key="definitions", on_change=updated_definitions,
+                     height=int(height / 2), max_chars=None, value=st.session_state[constants.DEFINITIONS], placeholder="A movie is identified by an id, and has a name, and a duration.")
 
 asp_title, import_asp = asp_column.columns(2)
 asp_title.header("ASP")
 import_asp.file_uploader("Upload ASP encoding", key='asp_uploader', on_change=read_asp_file)
 
 asp_column.text_area("Insert here your ASP encoding", key="asp", on_change=updated_asp_area,
-                     height=height, max_chars=None, value=st.session_state[constants.ASP_ENCODING])
-asp_column.button(label="Convert", on_click=convert_asp)
+                     height=height, max_chars=None, value=st.session_state[constants.ASP_ENCODING],
+                     placeholder="movie(1, \"Forrest Gump\", 142).")
+asp_column.button(label="Convert", on_click=convert_asp, help="Convert ASP rules to CNL")
 
 generate_link, link_area = asp_column.columns([1, 4])
-generate_link.button(label="Generate link", on_click=generate_shareable_link)
+generate_link.button(label="Generate link", on_click=generate_shareable_link, help="Generate a shareable link to this page")
 link_area.code(st.session_state[constants.LINK], line_numbers=False)
 
 res_column.header("CNL")
@@ -181,7 +182,7 @@ if st.session_state[constants.CNL_STATEMENTS] is not None:
     res_column.code(st.session_state[constants.CNL_STATEMENTS], language='markdown')
     download, improve = res_column.columns(2)
     download.download_button("Download", str(st.session_state[constants.CNL_STATEMENTS]),
-                             file_name='cnl.txt')
-    improve.button(label='Improve', on_click=call_qwen_llm)
+                             file_name='cnl.txt', help="Download result")
+    improve.button(label='Improve Clarity', on_click=call_qwen_llm, help="Improve clarity of CNL by calling an external LLM. Note: This might generate inaccurate results!")
 elif st.session_state[constants.ERROR] is not None:
     res_column.error(st.session_state[constants.ERROR])
