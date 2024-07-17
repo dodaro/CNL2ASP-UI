@@ -9,6 +9,7 @@ import sys
 import streamlit as st
 import json
 import dumbo_utils.url as dumbo
+from cnl2asp.utility.utility import Utility
 
 import constants
 
@@ -179,6 +180,10 @@ def updated_text_area():
     st.session_state[constants.CNL_STATEMENTS] = st.session_state.cnl
 
 
+def update_print_with_functions():
+    Utility.PRINT_WITH_FUNCTIONS = st.session_state.print_fn
+
+
 init()
 st.set_page_config(page_title="CNL2ASP",
                    layout="wide")
@@ -195,6 +200,9 @@ run_solver.toggle(label="Run", value=st.session_state[constants.RUN_SOLVER],
                   on_change=update_run_solver)
 optimize.toggle(label="Optimize", value=st.session_state[constants.OPTIMIZE],
                 help="Optimize encoding using [ngo](https://github.com/potassco/ngo).", on_change=update_optimize)
+run_solver.toggle(label="Print with functions", key='print_fn',
+                  help="Print the fields as functions, when the field is itself defined as a concept.",
+                  on_change=update_print_with_functions)
 convert_button = convert.button(label="Convert", on_click=convert_text(), help="Convert CNL statements to ASP")
 generate_link, link_area = cnl_column.columns([1, 4])
 generate_link.button(label="Generate link", on_click=generate_shareable_link, help="Generate a shareable link to this page")
