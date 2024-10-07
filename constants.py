@@ -8,3 +8,4 @@ RUN_SOLVER = "run_solver"
 SYMBOLS = "symbols"
 SELECTED_SYMBOLS = "selected_symbols"
 STR_2_SYMBOL = "str_2_symbol"
+PARSE_RESULT = 'parse_result'

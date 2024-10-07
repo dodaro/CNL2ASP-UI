@@ -12,6 +12,7 @@ def documentation():
 pg = st.navigation([
     st.Page("pages/cnl2aspui.py", title="CNL2ASP"),
     st.Page("pages/asp2cnlui.py", title="ASP2CNL"),
+    st.Page("pages/cnl2telui.py", title="CNL2TEL"),
     st.Page(documentation, title="Documentation"),
     ]
 )
