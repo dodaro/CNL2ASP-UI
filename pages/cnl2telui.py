@@ -75,7 +75,19 @@ def get_asp_encoding():
         sys.stderr = sys.__stderr__
         if str(exception.getvalue()) != "":
             return False, str(exception.getvalue())
-        return True, asp_encoding
+        else:
+            st.session_state[constants.SYMBOLS] = []
+            st.session_state['str_to_symbols'] = {}
+            for symbol in tool.get_symbols():
+                if symbol.predicate:
+                    symbol_string = f"{symbol.predicate}/{len(symbol.attributes)}"
+                    st.session_state[constants.SYMBOLS].append(symbol_string)
+                    st.session_state[constants.STR_2_SYMBOL][symbol_string] = symbol
+            if st.session_state[constants.OPTIMIZE]:
+                selected_symbols = [st.session_state[constants.STR_2_SYMBOL][x]
+                                    for x in st.session_state[constants.SELECTED_SYMBOLS]]
+                asp_encoding = tool.optimize(asp_encoding, selected_symbols)
+            return True, asp_encoding
     except Exception as e:
         return False, str(e)
 
@@ -102,7 +114,8 @@ def run_telingo():
     if st.session_state[constants.ASP_ENCODING] is None:
         return
     ctl = Telingo()
-    ctl.load(st.session_state[constants.ASP_ENCODING])
+    to_show = '\n'.join([f"#show {x}." for x in st.session_state[constants.SELECTED_SYMBOLS]])
+    ctl.load(st.session_state[constants.ASP_ENCODING] + to_show)
     solve = ctl.solve()
     st.session_state.answer_set = solve
     if st.session_state[constants.PARSE_RESULT]:
@@ -155,6 +168,9 @@ run_solver.toggle(label="Parse result", value=st.session_state[constants.PARSE_R
                   help="Parse the telingo result.",
                   on_change=update_parse_result)
 convert_button = convert.button(label="Convert", on_click=convert_text(), help="Convert CNL statements to TELINGO")
+selected = cnl_column.multiselect("Filter output", options=st.session_state[constants.SYMBOLS],
+                                  default=st.session_state[constants.SELECTED_SYMBOLS])
+st.session_state[constants.SELECTED_SYMBOLS] = selected
 generate_link, link_area = cnl_column.columns([1, 4])
 generate_link.button(label="Generate link", on_click=generate_shareable_link, help="Generate a shareable link to this page")
 link_area.code(st.session_state[constants.LINK], line_numbers=False)
@@ -176,7 +192,7 @@ if st.session_state[constants.ASP_ENCODING] is not None:
     download.download_button("Download", str(st.session_state[constants.ASP_ENCODING]),
                              file_name='encoding.asp', help="Download ASP encoding")
     if st.session_state[constants.RUN_SOLVER]:
-        asp_column.text_area("Answer set", key="answer_set")
+        asp_column.text_area("Answer set", key="answer_set", height=300)
         asp_column.download_button("Download", st.session_state.answer_set,
                                    file_name="answer_set.txt", help="Download answer set")
 elif st.session_state[constants.ERROR] is not None:
