@@ -9,7 +9,7 @@ charset-normalizer==3.3.2
 click==8.1.7
 clingo==5.7.1
 clingox==1.2.1
-cnl2asp==1.3.11
+cnl2asp==1.3.12
 telingo==2.1.3
 dataclass-type-validator==0.1.2
 dateutils==0.6.12

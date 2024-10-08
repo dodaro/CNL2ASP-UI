@@ -116,7 +116,7 @@ def run_telingo():
     ctl = Telingo()
     to_show = '\n'.join([f"#show {x}." for x in st.session_state[constants.SELECTED_SYMBOLS]])
     ctl.load(st.session_state[constants.ASP_ENCODING] + to_show)
-    solve = ctl.solve()
+    solve = ctl.solve(120)
     st.session_state.answer_set = solve
     if st.session_state[constants.PARSE_RESULT]:
         st.session_state.answer_set = TelingoResultParser(Cnl2asp(st.session_state[constants.CNL_STATEMENTS]).parse_input()).parse_model(solve)
