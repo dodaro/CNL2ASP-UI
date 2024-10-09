@@ -134,7 +134,7 @@ def generate_shareable_link():
             constants.SELECTED_SYMBOLS: st.session_state[constants.SELECTED_SYMBOLS]
         }
     )
-    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app?cnl={compressed}"
+    st.session_state[constants.LINK] = f"https://cnl2asp.streamlit.app/cnl2telui?cnl={compressed}"
 
 
 def updated_text_area():
