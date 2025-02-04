@@ -6,7 +6,6 @@ from asp2cnl.compiler import compile_rule
 from asp2cnl.parser import ASPParser
 from cnl2asp.cnl2asp import Cnl2asp
 import streamlit as st
-from gradio_client import Client
 from groq import Groq
 
 import constants
