@@ -7,6 +7,7 @@ from asp2cnl.parser import ASPParser
 from cnl2asp.cnl2asp import Cnl2asp
 import streamlit as st
 from gradio_client import Client
+from groq import Groq
 
 import constants
 import json
@@ -119,16 +120,61 @@ def updated_definitions():
     st.session_state[constants.DEFINITIONS] = st.session_state.definitions
 
 
-def call_qwen_llm():
+def call_groq_llm():
     try:
-        client = Client("Qwen/Qwen2-72B-Instruct")
-        result = client.predict(
-            query=f"{st.session_state[constants.CNL_STATEMENTS]}",
-            history=[],
-            system="Explain the problem provided improving the writing style",
-            api_name="/model_chat"
+        client = Groq(
+            api_key=st.secrets["groq_api_key"],
         )
-        st.session_state[constants.CNL_STATEMENTS] = result[1][0][1]
+        result = client.chat.completions.create(
+            #
+            # Required parameters
+            #
+            messages=[
+                # Set an optional system message. This sets the behavior of the
+                # assistant and can be used to provide specific instructions for
+                # how it should behave throughout the conversation.
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant which explains the problems provided improving the writing style and clarity.\n"
+                               "In your response I just want the rewritten text."
+                },
+                # Set a user message for the assistant to respond to.
+                {
+                    "role": "user",
+                    "content": f"{st.session_state[constants.CNL_STATEMENTS]}",
+                }
+            ],
+
+            # The language model which will generate the completion.
+            model="llama-3.3-70b-versatile",
+
+            #
+            # Optional parameters
+            #
+
+            # Controls randomness: lowering results in less random completions.
+            # As the temperature approaches zero, the model will become deterministic
+            # and repetitive.
+            temperature=0.5,
+
+            # The maximum number of tokens to generate. Requests can use up to
+            # 32,768 tokens shared between prompt and completion.
+            max_completion_tokens=1024,
+
+            # Controls diversity via nucleus sampling: 0.5 means half of all
+            # likelihood-weighted options are considered.
+            top_p=1,
+
+            # A stop sequence is a predefined or user-specified text string that
+            # signals an AI to stop generating content, ensuring its responses
+            # remain focused and concise. Examples include punctuation marks and
+            # markers like "[end]".
+            stop=None,
+
+            # If set, partial message deltas will be sent.
+            stream=False,
+        )
+        st.session_state[constants.CNL_STATEMENTS] = result.choices[0].message.content
     except:
         st.session_state[constants.CNL_STATEMENTS] = None
         st.session_state[constants.ERROR] = 'Could not contact the server, please try again later.'
@@ -146,7 +192,6 @@ def read_definitions_file():
         stringio = StringIO(st.session_state.definitions_uploader.getvalue().decode("utf-8"))
         string_data = stringio.read()
         st.session_state[constants.DEFINITIONS] = string_data
-
 
 init()
 st.set_page_config(page_title="ASP2CNL",
@@ -183,6 +228,6 @@ if st.session_state[constants.CNL_STATEMENTS] is not None:
     download, improve = res_column.columns(2)
     download.download_button("Download", str(st.session_state[constants.CNL_STATEMENTS]),
                              file_name='cnl.txt', help="Download result")
-    improve.button(label='Improve Clarity', on_click=call_qwen_llm, help="Improve clarity of CNL by calling an external LLM. Note: This might generate inaccurate results!")
+    improve.button(label='Improve Clarity', on_click=call_groq_llm, help="Improve clarity of CNL by calling an external LLM. Note: This might generate inaccurate results!")
 elif st.session_state[constants.ERROR] is not None:
     res_column.error(st.session_state[constants.ERROR])
