@@ -2,6 +2,7 @@ import base64
 import zlib
 from io import StringIO
 
+import groq
 from asp2cnl.compiler import compile_rule
 from asp2cnl.parser import ASPParser
 from cnl2asp.cnl2asp import Cnl2asp
@@ -62,7 +63,7 @@ def get_cnl():
     try:
         cnl = ''
         symbols = Cnl2asp(st.session_state[constants.DEFINITIONS]).get_symbols()
-        encoding = ASPParser(st.session_state[constants.ASP_ENCODING]).parse()
+        encoding = ASPParser(st.session_state[constants.ASP_ENCODING] + '\n').parse()
         i = 0
         for rule in encoding:
             cnl += f'{compile_rule(rule, symbols)}\n'
@@ -120,6 +121,9 @@ def updated_definitions():
 
 
 def call_groq_llm():
+    models = ['llama-3.3-70b-versatile', 'distil-whisper-large-v3-en', 'gemma2-9b-it', 'llama-3.1-8b-instant',
+              'llama-guard-3-8b', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'whisper-large-v3',
+              'whisper-large-v3-turbo']
     try:
         client = Groq(
             api_key=st.secrets["groq_api_key"],
@@ -145,7 +149,7 @@ def call_groq_llm():
             ],
 
             # The language model which will generate the completion.
-            model="llama-3.3-70b-versatile",
+            model=models[constants.ASP2NL_MODEL],
 
             #
             # Optional parameters
@@ -174,9 +178,16 @@ def call_groq_llm():
             stream=False,
         )
         st.session_state[constants.CNL_STATEMENTS] = result.choices[0].message.content
+    except groq.RateLimitError:
+        constants.ASP2NL_MODEL += 1
+        if constants.ASP2NL_MODEL < len(models):
+            call_groq_llm()
+        else:
+            raise RuntimeError
     except:
         st.session_state[constants.CNL_STATEMENTS] = None
-        st.session_state[constants.ERROR] = 'Could not contact the server, please try again later.'
+        st.session_state[
+            constants.ERROR] = 'LLM rate limit exceeded, please try to refresh the page and if still doesn\'t work try again tomorrow!'
 
 
 def read_asp_file():
@@ -192,6 +203,7 @@ def read_definitions_file():
         string_data = stringio.read()
         st.session_state[constants.DEFINITIONS] = string_data
 
+
 init()
 st.set_page_config(page_title="ASP2CNL",
                    layout="wide")
@@ -200,10 +212,12 @@ st.title("ASP2CNL")
 st.divider()
 asp_column, res_column = st.columns(2, gap="medium")
 definition_title, import_definitions = asp_column.columns(2)
-import_definitions.file_uploader("Upload concept definitions", key='definitions_uploader', on_change=read_definitions_file)
+import_definitions.file_uploader("Upload concept definitions", key='definitions_uploader',
+                                 on_change=read_definitions_file)
 definition_title.header("CNL Concepts")
 asp_column.text_area("Insert here the concept definitions", key="definitions", on_change=updated_definitions,
-                     height=int(height / 2), max_chars=None, value=st.session_state[constants.DEFINITIONS], placeholder="A movie is identified by an id, and has a name, and a duration.")
+                     height=int(height / 2), max_chars=None, value=st.session_state[constants.DEFINITIONS],
+                     placeholder="A movie is identified by an id, and has a name, and a duration.")
 
 asp_title, import_asp = asp_column.columns(2)
 asp_title.header("ASP")
@@ -215,7 +229,8 @@ asp_column.text_area("Insert here your ASP encoding", key="asp", on_change=updat
 asp_column.button(label="Convert", on_click=convert_asp, help="Convert ASP rules to CNL")
 
 generate_link, link_area = asp_column.columns([1, 4])
-generate_link.button(label="Generate link", on_click=generate_shareable_link, help="Generate a shareable link to this page")
+generate_link.button(label="Generate link", on_click=generate_shareable_link,
+                     help="Generate a shareable link to this page")
 link_area.code(st.session_state[constants.LINK], line_numbers=False)
 
 res_column.header("CNL")
@@ -227,6 +242,7 @@ if st.session_state[constants.CNL_STATEMENTS] is not None:
     download, improve = res_column.columns(2)
     download.download_button("Download", str(st.session_state[constants.CNL_STATEMENTS]),
                              file_name='cnl.txt', help="Download result")
-    improve.button(label='Improve Clarity', on_click=call_groq_llm, help="Improve clarity of CNL by calling an external LLM. Note: This might generate inaccurate results!")
+    improve.button(label='Improve Clarity', on_click=call_groq_llm,
+                   help="Improve clarity of CNL by calling an external LLM. Note: This might generate inaccurate results!")
 elif st.session_state[constants.ERROR] is not None:
     res_column.error(st.session_state[constants.ERROR])
